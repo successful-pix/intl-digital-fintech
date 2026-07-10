@@ -14,6 +14,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as AuthenticatedTransfersRouteImport } from './routes/_authenticated/transfers'
+import { Route as AuthenticatedTransactionsRouteImport } from './routes/_authenticated/transactions'
+import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
@@ -41,6 +44,22 @@ const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthenticatedTransfersRoute = AuthenticatedTransfersRouteImport.update({
+  id: '/transfers',
+  path: '/transfers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTransactionsRoute =
+  AuthenticatedTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSecurityRoute = AuthenticatedSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -57,6 +76,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/security': typeof AuthenticatedSecurityRoute
+  '/transactions': typeof AuthenticatedTransactionsRoute
+  '/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
 }
@@ -65,6 +87,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/security': typeof AuthenticatedSecurityRoute
+  '/transactions': typeof AuthenticatedTransactionsRoute
+  '/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
 }
@@ -75,6 +100,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/security': typeof AuthenticatedSecurityRoute
+  '/_authenticated/transactions': typeof AuthenticatedTransactionsRoute
+  '/_authenticated/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
 }
@@ -85,6 +113,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/profile'
+    | '/security'
+    | '/transactions'
+    | '/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
   fileRoutesByTo: FileRoutesByTo
@@ -93,6 +124,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/profile'
+    | '/security'
+    | '/transactions'
+    | '/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
   id:
@@ -102,6 +136,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/profile'
+    | '/_authenticated/security'
+    | '/_authenticated/transactions'
+    | '/_authenticated/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
   fileRoutesById: FileRoutesById
@@ -149,6 +186,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthResetPasswordRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_authenticated/transfers': {
+      id: '/_authenticated/transfers'
+      path: '/transfers'
+      fullPath: '/transfers'
+      preLoaderRoute: typeof AuthenticatedTransfersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/transactions': {
+      id: '/_authenticated/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof AuthenticatedTransactionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/security': {
+      id: '/_authenticated/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof AuthenticatedSecurityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -169,11 +227,17 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
+  AuthenticatedTransactionsRoute: typeof AuthenticatedTransactionsRoute
+  AuthenticatedTransfersRoute: typeof AuthenticatedTransfersRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
+  AuthenticatedTransactionsRoute: AuthenticatedTransactionsRoute,
+  AuthenticatedTransfersRoute: AuthenticatedTransfersRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
