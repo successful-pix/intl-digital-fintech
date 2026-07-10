@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Download, Printer } from "lucide-react";
 import { AppShell, StatusPill } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, type Currency } from "@/lib/currency";
 import { useSession } from "@/lib/use-session";
+import { downloadReceipt, printReceipt, type ReceiptData } from "@/lib/pdf-receipt";
 
 export const Route = createFileRoute("/_authenticated/transactions")({
   head: () => ({ meta: [{ title: "Transactions — International Digital" }] }),
@@ -21,6 +23,16 @@ function Txns() {
       .or(`sender_user_id.eq.${user!.id},receiver_user_id.eq.${user!.id}`)
       .order("created_at", { ascending: false })).data ?? [],
   });
+
+  function receiptFor(t: NonNullable<typeof data>[number]): ReceiptData {
+    return {
+      reference: t.reference, date: t.created_at, status: t.status, type: t.tx_type,
+      amount: Number(t.amount), currency: t.currency as Currency,
+      senderName: t.sender_name, senderAccount: null,
+      receiverName: t.receiver_name, receiverAccount: null,
+      description: t.description,
+    };
+  }
 
   return (
     <AppShell>
@@ -42,7 +54,7 @@ function Txns() {
                   : t.tx_type === "transfer" ? (isIncoming ? `From ${t.sender_name ?? "Sender"}` : `To ${t.receiver_name ?? "Recipient"}`)
                   : t.tx_type === "deposit" ? "Deposit" : "Withdrawal";
                 return (
-                  <li key={t.id} className="flex items-center gap-4 p-4 sm:p-5">
+                  <li key={t.id} className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
                     <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${isIncoming ? "bg-success/15 text-success" : "bg-primary/15 text-primary"}`}>
                       {isIncoming ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
                     </div>
@@ -56,6 +68,12 @@ function Txns() {
                       </div>
                       <StatusPill status={t.status} />
                     </div>
+                    {t.status === "successful" && (
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => downloadReceipt(receiptFor(t))} title="Download receipt"><Download className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => printReceipt(receiptFor(t))} title="Print receipt"><Printer className="h-4 w-4" /></Button>
+                      </div>
+                    )}
                   </li>
                 );
               })}
