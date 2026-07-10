@@ -1,13 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Bell, LayoutDashboard, LifeBuoy, LogOut, Menu, User as UserIcon, ArrowLeftRight, Receipt, ShieldCheck } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bell, LayoutDashboard, LifeBuoy, LogOut, Menu, User as UserIcon, ArrowLeftRight, Receipt, ShieldCheck, Shield, IdCard } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,30 +19,62 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/transfers", label: "Transfers", icon: ArrowLeftRight },
   { to: "/transactions", label: "Transactions", icon: Receipt },
+  { to: "/kyc", label: "Verification", icon: IdCard },
+  { to: "/support", label: "Support", icon: LifeBuoy },
   { to: "/profile", label: "Profile", icon: UserIcon },
   { to: "/security", label: "Security", icon: ShieldCheck },
-];
+] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [openMobile, setOpenMobile] = useState(false);
+  const { user } = useSession();
+  const qc = useQueryClient();
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id], enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("has_role", { _user_id: user!.id, _role: "admin" });
+      return !!data;
+    },
+  });
+
+  // Global realtime → invalidate relevant caches + toast
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel(`user-${user.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const n = payload.new as { title: string; body: string | null };
+          toast(n.title, { description: n.body ?? undefined });
+          qc.invalidateQueries({ queryKey: ["notif-unread", user.id] });
+          qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+        })
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => {
+        qc.invalidateQueries({ queryKey: ["recent-tx"] });
+        qc.invalidateQueries({ queryKey: ["all-tx"] });
+        qc.invalidateQueries({ queryKey: ["accounts"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, qc]);
+
   return (
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-border bg-sidebar lg:flex lg:flex-col">
-        <SidebarBody />
+        <SidebarBody isAdmin={!!isAdmin} />
       </aside>
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="w-64 border-border bg-sidebar p-0"><SidebarBody onNav={() => setOpenMobile(false)} /></SheetContent>
+        <SheetContent side="left" className="w-64 border-border bg-sidebar p-0"><SidebarBody isAdmin={!!isAdmin} onNav={() => setOpenMobile(false)} /></SheetContent>
       </Sheet>
       <div className="lg:pl-60">
         <Topbar onOpenMobile={() => setOpenMobile(true)} />
         <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
-      <SupportFAB />
     </div>
   );
 }
 
-function SidebarBody({ onNav }: { onNav?: () => void }) {
+function SidebarBody({ onNav, isAdmin }: { onNav?: () => void; isAdmin: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <>
@@ -58,6 +91,12 @@ function SidebarBody({ onNav }: { onNav?: () => void }) {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link to="/admin" onClick={onNav}
+            className={cn("mt-4 flex items-center gap-3 rounded-lg border border-primary/30 px-3 py-2 text-sm text-primary transition hover:bg-primary/10")}>
+            <Shield className="h-4 w-4" />Admin
+          </Link>
+        )}
       </nav>
       <div className="border-t border-sidebar-border p-3 text-xs text-muted-foreground">© International Digital</div>
     </>
@@ -67,29 +106,39 @@ function SidebarBody({ onNav }: { onNav?: () => void }) {
 function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
   const navigate = useNavigate();
   const { user } = useSession();
+  const qc = useQueryClient();
 
   const { data: unread = 0 } = useQuery({
-    queryKey: ["notif-unread", user?.id],
-    enabled: !!user,
+    queryKey: ["notif-unread", user?.id], enabled: !!user,
     queryFn: async () => {
       const { count } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("read", false);
       return count ?? 0;
     },
   });
 
+  const { data: latest = [] } = useQuery({
+    queryKey: ["notif-latest", user?.id], enabled: !!user,
+    queryFn: async () => (await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(6)).data ?? [],
+  });
+
   const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("full_name,avatar_url,email").eq("id", user!.id).maybeSingle();
-      return data;
-    },
+    queryKey: ["profile", user?.id], enabled: !!user,
+    queryFn: async () => (await supabase.from("profiles").select("full_name,avatar_url,email").eq("id", user!.id).maybeSingle()).data,
   });
 
   async function signOut() {
+    await qc.cancelQueries();
+    qc.clear();
     await supabase.auth.signOut();
     toast.success("Signed out");
-    navigate({ to: "/auth" });
+    navigate({ to: "/auth", replace: true });
+  }
+
+  async function markAll() {
+    if (!user) return;
+    await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false);
+    qc.invalidateQueries({ queryKey: ["notif-unread", user.id] });
+    qc.invalidateQueries({ queryKey: ["notif-latest", user.id] });
   }
 
   const initials = (profile?.full_name ?? profile?.email ?? "?").split(" ").map((s) => s[0]).slice(0,2).join("").toUpperCase();
@@ -100,10 +149,33 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
       <div className="hidden lg:block" />
       <div className="flex items-center gap-1.5">
         <ThemeToggle />
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
-          {unread > 0 && <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">{unread}</span>}
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-4 w-4" />
+              {unread > 0 && <span className="absolute right-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">{unread}</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 p-0">
+            <div className="flex items-center justify-between border-b border-border/60 p-3">
+              <div className="text-sm font-semibold">Notifications</div>
+              <Button variant="ghost" size="sm" onClick={markAll}>Mark read</Button>
+            </div>
+            <ul className="max-h-80 divide-y divide-border/60 overflow-y-auto">
+              {latest.length === 0 && <li className="p-6 text-center text-sm text-muted-foreground">No notifications yet.</li>}
+              {latest.map((n) => (
+                <li key={n.id} className={cn("p-3 text-sm", !n.read && "bg-primary/[0.04]")}>
+                  <div className="font-medium">{n.title}</div>
+                  {n.body && <div className="text-xs text-muted-foreground">{n.body}</div>}
+                  <div className="mt-1 text-[10px] text-muted-foreground">{new Date(n.created_at).toLocaleString()}</div>
+                </li>
+              ))}
+            </ul>
+            <div className="border-t border-border/60 p-2 text-center">
+              <Button asChild variant="ghost" size="sm" className="w-full"><Link to="/notifications">View all</Link></Button>
+            </div>
+          </PopoverContent>
+        </Popover>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-full p-1 hover:bg-accent">
@@ -118,6 +190,7 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild><Link to="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link></DropdownMenuItem>
             <DropdownMenuItem asChild><Link to="/security"><ShieldCheck className="mr-2 h-4 w-4" />Security</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link to="/kyc"><IdCard className="mr-2 h-4 w-4" />Verification</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut}><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
           </DropdownMenuContent>
@@ -127,24 +200,16 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
   );
 }
 
-function SupportFAB() {
-  return (
-    <button
-      onClick={() => toast.info("Support chat is coming soon.")}
-      className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full gradient-primary text-primary-foreground shadow-elegant transition hover:scale-105"
-      aria-label="Support">
-      <LifeBuoy className="h-6 w-6" />
-    </button>
-  );
-}
-
 export function StatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {
     active: "bg-success/15 text-success",
     successful: "bg-success/15 text-success",
+    approved: "bg-success/15 text-success",
     pending: "bg-warning/15 text-warning",
+    not_submitted: "bg-muted text-muted-foreground",
     failed: "bg-destructive/15 text-destructive",
+    rejected: "bg-destructive/15 text-destructive",
     suspended: "bg-destructive/15 text-destructive",
   };
-  return <Badge className={cn("border-transparent capitalize", map[status] ?? "bg-muted text-muted-foreground")}>{status}</Badge>;
+  return <Badge className={cn("border-transparent capitalize", map[status] ?? "bg-muted text-muted-foreground")}>{status.replace("_"," ")}</Badge>;
 }
