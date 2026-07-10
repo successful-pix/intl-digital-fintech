@@ -14,16 +14,226 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          account_number: string
+          balance: number
+          created_at: string
+          currency: Database["public"]["Enums"]["account_currency"]
+          id: string
+          status: Database["public"]["Enums"]["account_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_number: string
+          balance?: number
+          created_at?: string
+          currency: Database["public"]["Enums"]["account_currency"]
+          id?: string
+          status?: Database["public"]["Enums"]["account_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string
+          balance?: number
+          created_at?: string
+          currency?: Database["public"]["Enums"]["account_currency"]
+          id?: string
+          status?: Database["public"]["Enums"]["account_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          type: Database["public"]["Enums"]["notif_type"]
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          type: Database["public"]["Enums"]["notif_type"]
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          type?: Database["public"]["Enums"]["notif_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          kyc_rejection_reason: string | null
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
+          phone: string | null
+          transfer_pin_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          kyc_rejection_reason?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          phone?: string | null
+          transfer_pin_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          kyc_rejection_reason?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          phone?: string | null
+          transfer_pin_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          created_at: string
+          currency: Database["public"]["Enums"]["account_currency"]
+          description: string | null
+          id: string
+          is_admin_adjustment: boolean
+          receiver_account_id: string | null
+          receiver_name: string | null
+          receiver_user_id: string | null
+          reference: string
+          sender_account_id: string | null
+          sender_name: string | null
+          sender_user_id: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          tx_type: Database["public"]["Enums"]["tx_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          created_at?: string
+          currency: Database["public"]["Enums"]["account_currency"]
+          description?: string | null
+          id?: string
+          is_admin_adjustment?: boolean
+          receiver_account_id?: string | null
+          receiver_name?: string | null
+          receiver_user_id?: string | null
+          reference?: string
+          sender_account_id?: string | null
+          sender_name?: string | null
+          sender_user_id?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          tx_type: Database["public"]["Enums"]["tx_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          created_at?: string
+          currency?: Database["public"]["Enums"]["account_currency"]
+          description?: string | null
+          id?: string
+          is_admin_adjustment?: boolean
+          receiver_account_id?: string | null
+          receiver_name?: string | null
+          receiver_user_id?: string | null
+          reference?: string
+          sender_account_id?: string | null
+          sender_name?: string | null
+          sender_user_id?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          tx_type?: Database["public"]["Enums"]["tx_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_receiver_account_id_fkey"
+            columns: ["receiver_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_sender_account_id_fkey"
+            columns: ["sender_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      grant_admin_by_email: { Args: { _email: string }; Returns: undefined }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      account_currency: "USD" | "CAD" | "VND" | "BRL"
+      account_status: "active" | "suspended" | "closed"
+      app_role: "admin" | "user"
+      kyc_status: "not_submitted" | "pending" | "approved" | "rejected"
+      notif_type: "deposit" | "transfer" | "security" | "support" | "system"
+      tx_status: "pending" | "successful" | "failed"
+      tx_type: "deposit" | "transfer" | "withdrawal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +360,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_currency: ["USD", "CAD", "VND", "BRL"],
+      account_status: ["active", "suspended", "closed"],
+      app_role: ["admin", "user"],
+      kyc_status: ["not_submitted", "pending", "approved", "rejected"],
+      notif_type: ["deposit", "transfer", "security", "support", "system"],
+      tx_status: ["pending", "successful", "failed"],
+      tx_type: ["deposit", "transfer", "withdrawal"],
+    },
   },
 } as const
