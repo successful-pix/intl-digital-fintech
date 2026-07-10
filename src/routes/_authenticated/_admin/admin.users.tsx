@@ -47,7 +47,7 @@ function AdminUsers() {
     if (!adjust) return;
     const amt = parseFloat(amount);
     if (!isFinite(amt) || amt === 0) return toast.error("Enter a non-zero amount");
-    const { error } = await supabase.rpc("admin_adjust_balance", { _account_id: adjust.accountId, _amount: amt, _description: desc || null });
+    const { error } = await supabase.rpc("admin_adjust_balance", { _account_id: adjust.accountId, _amount: amt, _description: desc || "Admin adjustment" });
     if (error) return toast.error(error.message);
     toast.success("Adjustment applied");
     setAdjust(null); setAmount(""); setDesc("");

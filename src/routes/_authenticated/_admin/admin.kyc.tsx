@@ -31,7 +31,7 @@ function AdminKyc() {
 
   async function decide(userId: string, approve: boolean, reason: string) {
     const { error } = await supabase.rpc("admin_set_kyc", {
-      _user_id: userId, _status: approve ? "approved" : "rejected", _reason: approve ? null : (reason || "Rejected"),
+      _user_id: userId, _status: approve ? "approved" : "rejected", _reason: approve ? "" : (reason || "Rejected"),
     });
     if (error) return toast.error(error.message);
     toast.success("KYC updated");
