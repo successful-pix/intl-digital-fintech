@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          id: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          id?: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          id?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -113,6 +137,39 @@ export type Database = {
           phone?: string | null
           transfer_pin_hash?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_admin: boolean
+          read_by_admin: boolean
+          read_by_user: boolean
+          sender_user_id: string
+          thread_user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          read_by_admin?: boolean
+          read_by_user?: boolean
+          sender_user_id: string
+          thread_user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          read_by_admin?: boolean
+          read_by_user?: boolean
+          sender_user_id?: string
+          thread_user_id?: string
         }
         Relationships: []
       }
@@ -217,6 +274,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_balance: {
+        Args: { _account_id: string; _amount: number; _description: string }
+        Returns: undefined
+      }
+      admin_set_account_status: {
+        Args: {
+          _account_id: string
+          _status: Database["public"]["Enums"]["account_status"]
+        }
+        Returns: undefined
+      }
+      admin_set_kyc: {
+        Args: {
+          _reason: string
+          _status: Database["public"]["Enums"]["kyc_status"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       grant_admin_by_email: { Args: { _email: string }; Returns: undefined }
       has_role: {
         Args: {
@@ -224,6 +300,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      process_transfer: {
+        Args: { _approve: boolean; _tx_id: string }
+        Returns: undefined
       }
     }
     Enums: {
