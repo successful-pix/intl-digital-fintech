@@ -25,7 +25,9 @@ export const Route = createFileRoute("/auth/verify")({
 });
 
 function Verify() {
-  const { email, purpose } = Route.useSearch();
+  const search = Route.useSearch();
+  const email = search.email;
+  const purpose = search.purpose as "signup" | "login" | "reset";
   const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
