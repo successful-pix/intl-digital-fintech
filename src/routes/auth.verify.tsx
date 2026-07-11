@@ -83,12 +83,13 @@ function Verify() {
     }
   }
 
-  const titles = { signup: "Verify your email", login: "Confirm it's you", reset: "Reset your password" } as const;
-  const subtitles = {
+  const titles: Record<"signup" | "login" | "reset", string> = { signup: "Verify your email", login: "Confirm it's you", reset: "Reset your password" };
+  const subtitles: Record<"signup" | "login" | "reset", string> = {
     signup: "Enter the 6-digit code we sent to activate your account.",
     login: "For your security we sent a 6-digit code to your email.",
     reset: "Enter the 6-digit code from your email.",
-  } as const;
+  };
+
 
   return (
     <div className="relative grid min-h-screen place-items-center px-4">
