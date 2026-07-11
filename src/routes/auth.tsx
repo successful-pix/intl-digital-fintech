@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -13,18 +14,19 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { CURRENCIES, type Currency } from "@/lib/currency";
+import { startSignup, startLogin, startReset } from "@/lib/auth-otp.functions";
 
-const searchSchema = z.object({ mode: z.enum(["login","register","forgot"]).optional() });
+const searchSchema = z.object({ mode: z.enum(["login", "register", "forgot"]).optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({ meta: [{ title: "Sign in — International Digital" }, { name: "description", content: "Sign in or open a new International Digital account." }] }),
+  head: () => ({ meta: [{ title: "Sign in — International Digital" }] }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const { mode } = Route.useSearch();
-  const [tab, setTab] = useState<"login"|"register"|"forgot">(mode ?? "login");
+  const [tab, setTab] = useState<"login" | "register" | "forgot">(mode ?? "login");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,7 +45,7 @@ function AuthPage() {
           <ThemeToggle />
         </div>
         <div className="flex flex-1 flex-col justify-center py-10">
-          <Card className="border-border bg-card/80 p-6 backdrop-blur-xl shadow-elegant">
+          <Card className="border-border bg-card/80 p-6 backdrop-blur-xl shadow-elegant animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="mb-6 text-center">
               <h1 className="font-display text-2xl font-bold">Welcome</h1>
               <p className="mt-1 text-sm text-muted-foreground">Sign in or create your account.</p>
@@ -70,23 +72,20 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const login = useServerFn(startLogin);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        toast.error("Please verify your email first.");
-        navigate({ to: "/auth/verify", search: { email } });
-        return;
-      }
-      toast.error(error.message);
-      return;
+    try {
+      await login({ data: { email, password } });
+      toast.success("We sent you a 6-digit code");
+      navigate({ to: "/auth/verify", search: { email, purpose: "login" } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign-in failed");
+    } finally {
+      setLoading(false);
     }
-    toast.success("Welcome back");
-    navigate({ to: "/dashboard" });
   }
 
   return (
@@ -94,7 +93,7 @@ function LoginForm() {
       <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></Field>
       <Field label="Password"><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></Field>
       <Button type="submit" disabled={loading} className="w-full gradient-primary text-primary-foreground">
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign in
+        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Continue with email code
       </Button>
     </form>
   );
@@ -104,23 +103,21 @@ function RegisterForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", password: "", currency: "USD" as Currency });
   const [loading, setLoading] = useState(false);
+  const signup = useServerFn(startSignup);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (form.password.length < 8) return toast.error("Password must be at least 8 characters.");
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: { full_name: form.fullName, phone: form.phone, currency: form.currency },
-        emailRedirectTo: `${window.location.origin}/auth/verify`,
-      },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Check your email for a verification code.");
-    navigate({ to: "/auth/verify", search: { email: form.email } });
+    try {
+      await signup({ data: form });
+      toast.success("Check your email for a 6-digit verification code.");
+      navigate({ to: "/auth/verify", search: { email: form.email, purpose: "signup" } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Registration failed.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -148,28 +145,31 @@ function RegisterForm() {
 }
 
 function ForgotForm() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const reset = useServerFn(startReset);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    setSent(true);
-    toast.success("Password reset email sent.");
+    try {
+      await reset({ data: { email } });
+      toast.success("If that email exists, we sent a 6-digit code.");
+      navigate({ to: "/auth/verify", search: { email, purpose: "reset" } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send code.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <p className="text-sm text-muted-foreground">Enter your email — we'll send you a secure reset link.</p>
+      <p className="text-sm text-muted-foreground">Enter your email — we'll send you a secure 6-digit code.</p>
       <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-      <Button type="submit" disabled={loading || sent} className="w-full">
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {sent ? "Email sent" : "Send reset link"}
+      <Button type="submit" disabled={loading} className="w-full">
+        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send reset code
       </Button>
     </form>
   );
