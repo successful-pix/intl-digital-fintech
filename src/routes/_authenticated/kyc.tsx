@@ -17,11 +17,10 @@ export const Route = createFileRoute("/_authenticated/kyc")({
 });
 
 const DOC_TYPES = [
-  { key: "id_front", label: "Government ID (front)" },
-  { key: "id_back", label: "Government ID (back)" },
-  { key: "selfie", label: "Selfie with ID" },
-  { key: "address_proof", label: "Proof of address" },
+  { key: "id_front", label: "Government ID — Front" },
+  { key: "id_back", label: "Government ID — Back" },
 ];
+
 
 function KycPage() {
   const { user } = useSession();
