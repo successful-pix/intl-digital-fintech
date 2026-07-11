@@ -17,6 +17,7 @@ export type Database = {
       accounts: {
         Row: {
           account_number: string
+          agency_code: string | null
           balance: number
           created_at: string
           currency: Database["public"]["Enums"]["account_currency"]
@@ -27,6 +28,7 @@ export type Database = {
         }
         Insert: {
           account_number: string
+          agency_code?: string | null
           balance?: number
           created_at?: string
           currency: Database["public"]["Enums"]["account_currency"]
@@ -37,6 +39,7 @@ export type Database = {
         }
         Update: {
           account_number?: string
+          agency_code?: string | null
           balance?: number
           created_at?: string
           currency?: Database["public"]["Enums"]["account_currency"]
@@ -44,6 +47,45 @@ export type Database = {
           status?: Database["public"]["Enums"]["account_status"]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      email_otps: {
+        Row: {
+          attempts: number
+          code: string
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          pending_session: Json | null
+          purpose: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          pending_session?: Json | null
+          purpose: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          pending_session?: Json | null
+          purpose?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -145,6 +187,7 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          image_url: string | null
           is_admin: boolean
           read_by_admin: boolean
           read_by_user: boolean
@@ -155,6 +198,7 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_admin?: boolean
           read_by_admin?: boolean
           read_by_user?: boolean
@@ -165,6 +209,7 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_admin?: boolean
           read_by_admin?: boolean
           read_by_user?: boolean
@@ -180,6 +225,10 @@ export type Database = {
           created_at: string
           currency: Database["public"]["Enums"]["account_currency"]
           description: string | null
+          external_recipient_account: string | null
+          external_recipient_bank: string | null
+          external_recipient_iban: string | null
+          external_recipient_name: string | null
           id: string
           is_admin_adjustment: boolean
           receiver_account_id: string | null
@@ -199,6 +248,10 @@ export type Database = {
           created_at?: string
           currency: Database["public"]["Enums"]["account_currency"]
           description?: string | null
+          external_recipient_account?: string | null
+          external_recipient_bank?: string | null
+          external_recipient_iban?: string | null
+          external_recipient_name?: string | null
           id?: string
           is_admin_adjustment?: boolean
           receiver_account_id?: string | null
@@ -218,6 +271,10 @@ export type Database = {
           created_at?: string
           currency?: Database["public"]["Enums"]["account_currency"]
           description?: string | null
+          external_recipient_account?: string | null
+          external_recipient_bank?: string | null
+          external_recipient_iban?: string | null
+          external_recipient_name?: string | null
           id?: string
           is_admin_adjustment?: boolean
           receiver_account_id?: string | null
@@ -274,10 +331,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_adjust_balance: {
-        Args: { _account_id: string; _amount: number; _description: string }
-        Returns: undefined
-      }
+      admin_adjust_balance:
+        | {
+            Args: { _account_id: string; _amount: number; _description: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _account_id: string
+              _amount: number
+              _description: string
+              _sender_name?: string
+            }
+            Returns: undefined
+          }
       admin_set_account_status: {
         Args: {
           _account_id: string
@@ -305,6 +372,7 @@ export type Database = {
         Args: { _approve: boolean; _tx_id: string }
         Returns: undefined
       }
+      support_unread_for_user: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
       account_currency: "USD" | "CAD" | "VND" | "BRL"
