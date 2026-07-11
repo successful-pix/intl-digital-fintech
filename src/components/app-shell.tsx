@@ -14,6 +14,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/use-session";
+import { SupportWidget } from "@/components/support-widget";
+
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -68,11 +70,32 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Sheet>
       <div className="lg:pl-60">
         <Topbar onOpenMobile={() => setOpenMobile(true)} />
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          <BlockedBanner />
+          <div className="animate-in fade-in duration-300">{children}</div>
+        </main>
       </div>
+      <SupportWidget />
     </div>
   );
 }
+
+function BlockedBanner() {
+  const { user } = useSession();
+  const { data: acct } = useQuery({
+    queryKey: ["my-acct-status", user?.id], enabled: !!user,
+    queryFn: async () => (await supabase.from("accounts").select("status").eq("user_id", user!.id).maybeSingle()).data,
+  });
+  if (acct?.status !== "suspended") return null;
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+      <Shield className="h-4 w-4 shrink-0" />
+      <div className="flex-1"><strong>Account blocked.</strong> Please contact support to unlock your account.</div>
+      <Link to="/support" className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground">Contact support</Link>
+    </div>
+  );
+}
+
 
 function SidebarBody({ onNav, isAdmin }: { onNav?: () => void; isAdmin: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });

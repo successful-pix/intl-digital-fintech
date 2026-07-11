@@ -89,23 +89,22 @@ function Hero() {
         <div className="relative mx-auto mt-16 max-w-5xl">
           <div className="rounded-2xl border border-border bg-card p-2 shadow-elegant">
             <div className="rounded-xl bg-gradient-to-br from-background to-accent/30 p-8">
-              <div className="grid gap-4 md:grid-cols-3">
-                {(["USD","CAD","BRL"] as const).map((c) => (
+              <div className="grid gap-4 md:grid-cols-4">
+                {(Object.keys(CURRENCIES) as (keyof typeof CURRENCIES)[]).map((c) => (
                   <div key={c} className="rounded-xl border border-border bg-card/80 p-5">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{CURRENCIES[c].flag} {c} balance</span>
-                      <span className="rounded-full bg-success/15 px-2 py-0.5 text-success">Active</span>
+                      <span>{CURRENCIES[c].flag} {c}</span>
+                      <span className="rounded-full bg-success/15 px-2 py-0.5 text-success">Available</span>
                     </div>
-                    <div className="mt-3 font-display text-3xl font-bold">
-                      {CURRENCIES[c].symbol}{(Math.random()*80000+10000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",")}
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">Available</div>
+                    <div className="mt-3 font-display text-xl font-semibold">{CURRENCIES[c].label}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">Hold, send & receive in {c}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </section>
   );
