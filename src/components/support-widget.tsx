@@ -89,7 +89,7 @@ export function SupportWidget() {
       if (up.error) throw up.error;
       const { data } = await supabase.storage.from("support-images").createSignedUrl(path, 60 * 60 * 24 * 30);
       await supabase.from("support_messages").insert({
-        thread_user_id: user.id, sender_user_id: user.id, is_admin: false, body: null, image_url: data?.signedUrl,
+        thread_user_id: user.id, sender_user_id: user.id, is_admin: false, body: "", image_url: data?.signedUrl,
       });
     } catch (err) {
       console.error(err);
