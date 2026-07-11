@@ -50,9 +50,13 @@ function Txns() {
             <ul className="divide-y divide-border/60">
               {data!.map((t) => {
                 const isIncoming = t.receiver_user_id === user?.id;
-                const label = t.is_admin_adjustment ? (isIncoming ? "Deposit" : "Withdrawal")
-                  : t.tx_type === "transfer" ? (isIncoming ? `From ${t.sender_name ?? "Sender"}` : `To ${t.receiver_name ?? "Recipient"}`)
-                  : t.tx_type === "deposit" ? "Deposit" : "Withdrawal";
+                // Never expose "admin adjustment" language to the user. Show as a normal
+                // deposit/withdrawal with the sender name and description.
+                const label = t.tx_type === "transfer"
+                  ? (isIncoming ? `From ${t.sender_name ?? "Sender"}` : `To ${t.receiver_name ?? "Recipient"}`)
+                  : t.tx_type === "deposit"
+                    ? `From ${t.sender_name ?? "International Digital"}`
+                    : `To ${t.external_recipient_name ?? t.receiver_name ?? "Recipient"}`;
                 return (
                   <li key={t.id} className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
                     <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${isIncoming ? "bg-success/15 text-success" : "bg-primary/15 text-primary"}`}>
@@ -61,6 +65,7 @@ function Txns() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{label}</div>
                       <div className="truncate text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.reference}</div>
+                      {t.description && <div className="truncate text-xs text-muted-foreground/80">{t.description}</div>}
                     </div>
                     <div className="text-right">
                       <div className={`text-sm font-semibold ${isIncoming ? "text-success" : ""}`}>
@@ -77,6 +82,7 @@ function Txns() {
                   </li>
                 );
               })}
+
             </ul>
           )}
         </Card>

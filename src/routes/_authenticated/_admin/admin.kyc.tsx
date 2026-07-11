@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppShell, StatusPill } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
@@ -24,11 +24,6 @@ function AdminKyc() {
     },
   });
 
-  async function view(path: string) {
-    const { data } = await supabase.storage.from("kyc").createSignedUrl(path, 300);
-    if (data) window.open(data.signedUrl, "_blank");
-  }
-
   async function decide(userId: string, approve: boolean, reason: string) {
     const { error } = await supabase.rpc("admin_set_kyc", {
       _user_id: userId, _status: approve ? "approved" : "rejected", _reason: approve ? "" : (reason || "Rejected"),
@@ -43,7 +38,7 @@ function AdminKyc() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold sm:text-3xl">KYC Review</h1>
         <div className="space-y-4">
-          {(data ?? []).map((u) => <KycRow key={u.id} user={u} onView={view} onDecide={decide} />)}
+          {(data ?? []).map((u) => <KycRow key={u.id} user={u} onDecide={decide} />)}
           {data?.length === 0 && <div className="text-sm text-muted-foreground">No submissions.</div>}
         </div>
       </div>
@@ -51,12 +46,26 @@ function AdminKyc() {
   );
 }
 
-function KycRow({ user, onView, onDecide }: {
-  user: { id: string; email: string; full_name: string | null; kyc_status: string; docs: { id: string; doc_type: string; storage_path: string }[] };
-  onView: (path: string) => void;
+type Doc = { id: string; doc_type: string; storage_path: string };
+
+function KycRow({ user, onDecide }: {
+  user: { id: string; email: string; full_name: string | null; kyc_status: string; docs: Doc[] };
   onDecide: (userId: string, approve: boolean, reason: string) => void;
 }) {
   const [reason, setReason] = useState("");
+  const [urls, setUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    (async () => {
+      const entries: [string, string][] = [];
+      for (const d of user.docs) {
+        const { data } = await supabase.storage.from("kyc").createSignedUrl(d.storage_path, 3600);
+        if (data?.signedUrl) entries.push([d.id, data.signedUrl]);
+      }
+      setUrls(Object.fromEntries(entries));
+    })();
+  }, [user.docs]);
+
   return (
     <Card className="border-border bg-card p-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -66,9 +75,18 @@ function KycRow({ user, onView, onDecide }: {
         </div>
         <StatusPill status={user.kyc_status} />
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {user.docs.map((d) => (
-          <Button key={d.id} size="sm" variant="outline" onClick={() => onView(d.storage_path)}>{d.doc_type}</Button>
+          <div key={d.id} className="overflow-hidden rounded-lg border border-border/60">
+            <div className="border-b border-border/60 bg-accent/40 px-3 py-2 text-xs font-medium capitalize">{d.doc_type.replace("_", " ")}</div>
+            {urls[d.id] ? (
+              <a href={urls[d.id]} target="_blank" rel="noreferrer" className="block">
+                <img src={urls[d.id]} alt={d.doc_type} className="max-h-64 w-full object-contain bg-black/40" />
+              </a>
+            ) : (
+              <div className="grid h-32 place-items-center text-xs text-muted-foreground">Loading…</div>
+            )}
+          </div>
         ))}
         {user.docs.length === 0 && <span className="text-xs text-muted-foreground">No documents.</span>}
       </div>
