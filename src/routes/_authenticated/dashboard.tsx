@@ -77,10 +77,10 @@ function Dashboard() {
         {/* Quick actions */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Send, label: "Send money", to: "/transfers" },
-            { icon: ArrowLeftRight, label: "Deposits", to: "/transactions" },
-            { icon: Receipt, label: "Receipts", to: "/transactions" },
-            { icon: Plus, label: "Complete KYC", to: "/profile" },
+            { icon: Send, label: "Send money", to: "/transfers" as const },
+            { icon: ArrowLeftRight, label: "Deposits", to: "/deposits" as const },
+            { icon: Receipt, label: "Receipts", to: "/transactions" as const },
+            { icon: Plus, label: "Complete KYC", to: "/kyc" as const },
           ].map((a) => (
             <Link key={a.label} to={a.to}>
               <Card className="flex items-center gap-3 border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-glow">

@@ -145,7 +145,7 @@ function Transfers() {
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
               Submit transfer
             </Button>
-            <p className="text-center text-xs text-muted-foreground">Transfers are reviewed and approved by our compliance team.</p>
+            
           </form>
         </Card>
       </div>

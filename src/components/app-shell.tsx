@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, LayoutDashboard, LifeBuoy, LogOut, Menu, User as UserIcon, ArrowLeftRight, Receipt, ShieldCheck, Shield, IdCard } from "lucide-react";
+import { Bell, LayoutDashboard, LogOut, Menu, User as UserIcon, ArrowLeftRight, Receipt, ShieldCheck, Shield, IdCard, ArrowDownLeft } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,8 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/transfers", label: "Transfers", icon: ArrowLeftRight },
   { to: "/transactions", label: "Transactions", icon: Receipt },
+  { to: "/deposits", label: "Deposit history", icon: ArrowDownLeft },
   { to: "/kyc", label: "Verification", icon: IdCard },
-  { to: "/support", label: "Support", icon: LifeBuoy },
   { to: "/profile", label: "Profile", icon: UserIcon },
   { to: "/security", label: "Security", icon: ShieldCheck },
 ] as const;
@@ -90,8 +90,7 @@ function BlockedBanner() {
   return (
     <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
       <Shield className="h-4 w-4 shrink-0" />
-      <div className="flex-1"><strong>Account blocked.</strong> Please contact support to unlock your account.</div>
-      <Link to="/support" className="rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground">Contact support</Link>
+      <div className="flex-1"><strong>Account blocked.</strong> Please contact support to unlock your account — tap the chat button in the corner.</div>
     </div>
   );
 }
