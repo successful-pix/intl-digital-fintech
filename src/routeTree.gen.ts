@@ -23,7 +23,7 @@ import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/ky
 import { Route as AuthenticatedDepositsRouteImport } from './routes/_authenticated/deposits'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/_admin/route'
-import { Route as AuthenticatedAdminAdminRouteImport } from './routes/_authenticated/_admin/admin'
+import { Route as AuthenticatedAdminAdminIndexRouteImport } from './routes/_authenticated/_admin/admin.index'
 import { Route as AuthenticatedAdminAdminUsersRouteImport } from './routes/_authenticated/_admin/admin.users'
 import { Route as AuthenticatedAdminAdminTransactionsRouteImport } from './routes/_authenticated/_admin/admin.transactions'
 import { Route as AuthenticatedAdminAdminSupportRouteImport } from './routes/_authenticated/_admin/admin.support'
@@ -99,34 +99,35 @@ const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminAdminRoute = AuthenticatedAdminAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedAdminRouteRoute,
-} as any)
+const AuthenticatedAdminAdminIndexRoute =
+  AuthenticatedAdminAdminIndexRouteImport.update({
+    id: '/admin/',
+    path: '/admin/',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminAdminUsersRoute =
   AuthenticatedAdminAdminUsersRouteImport.update({
-    id: '/users',
-    path: '/users',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
+    id: '/admin/users',
+    path: '/admin/users',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAdminTransactionsRoute =
   AuthenticatedAdminAdminTransactionsRouteImport.update({
-    id: '/transactions',
-    path: '/transactions',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
+    id: '/admin/transactions',
+    path: '/admin/transactions',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAdminSupportRoute =
   AuthenticatedAdminAdminSupportRouteImport.update({
-    id: '/support',
-    path: '/support',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
+    id: '/admin/support',
+    path: '/admin/support',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAdminKycRoute =
   AuthenticatedAdminAdminKycRouteImport.update({
-    id: '/kyc',
-    path: '/kyc',
-    getParentRoute: () => AuthenticatedAdminAdminRoute,
+    id: '/admin/kyc',
+    path: '/admin/kyc',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -142,11 +143,11 @@ export interface FileRoutesByFullPath {
   '/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
-  '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/admin/kyc': typeof AuthenticatedAdminAdminKycRoute
   '/admin/support': typeof AuthenticatedAdminAdminSupportRoute
   '/admin/transactions': typeof AuthenticatedAdminAdminTransactionsRoute
   '/admin/users': typeof AuthenticatedAdminAdminUsersRoute
+  '/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -161,11 +162,11 @@ export interface FileRoutesByTo {
   '/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
-  '/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/admin/kyc': typeof AuthenticatedAdminAdminKycRoute
   '/admin/support': typeof AuthenticatedAdminAdminSupportRoute
   '/admin/transactions': typeof AuthenticatedAdminAdminTransactionsRoute
   '/admin/users': typeof AuthenticatedAdminAdminUsersRoute
+  '/admin': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -183,11 +184,11 @@ export interface FileRoutesById {
   '/_authenticated/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
-  '/_authenticated/_admin/admin': typeof AuthenticatedAdminAdminRouteWithChildren
   '/_authenticated/_admin/admin/kyc': typeof AuthenticatedAdminAdminKycRoute
   '/_authenticated/_admin/admin/support': typeof AuthenticatedAdminAdminSupportRoute
   '/_authenticated/_admin/admin/transactions': typeof AuthenticatedAdminAdminTransactionsRoute
   '/_authenticated/_admin/admin/users': typeof AuthenticatedAdminAdminUsersRoute
+  '/_authenticated/_admin/admin/': typeof AuthenticatedAdminAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -204,11 +205,11 @@ export interface FileRouteTypes {
     | '/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
-    | '/admin'
     | '/admin/kyc'
     | '/admin/support'
     | '/admin/transactions'
     | '/admin/users'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -223,11 +224,11 @@ export interface FileRouteTypes {
     | '/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
-    | '/admin'
     | '/admin/kyc'
     | '/admin/support'
     | '/admin/transactions'
     | '/admin/users'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -244,11 +245,11 @@ export interface FileRouteTypes {
     | '/_authenticated/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
-    | '/_authenticated/_admin/admin'
     | '/_authenticated/_admin/admin/kyc'
     | '/_authenticated/_admin/admin/support'
     | '/_authenticated/_admin/admin/transactions'
     | '/_authenticated/_admin/admin/users'
+    | '/_authenticated/_admin/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -357,72 +358,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/_admin/admin': {
-      id: '/_authenticated/_admin/admin'
+    '/_authenticated/_admin/admin/': {
+      id: '/_authenticated/_admin/admin/'
       path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminAdminRouteImport
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/_admin/admin/users': {
       id: '/_authenticated/_admin/admin/users'
-      path: '/users'
+      path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AuthenticatedAdminAdminUsersRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/_admin/admin/transactions': {
       id: '/_authenticated/_admin/admin/transactions'
-      path: '/transactions'
+      path: '/admin/transactions'
       fullPath: '/admin/transactions'
       preLoaderRoute: typeof AuthenticatedAdminAdminTransactionsRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/_admin/admin/support': {
       id: '/_authenticated/_admin/admin/support'
-      path: '/support'
+      path: '/admin/support'
       fullPath: '/admin/support'
       preLoaderRoute: typeof AuthenticatedAdminAdminSupportRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/_admin/admin/kyc': {
       id: '/_authenticated/_admin/admin/kyc'
-      path: '/kyc'
+      path: '/admin/kyc'
       fullPath: '/admin/kyc'
       preLoaderRoute: typeof AuthenticatedAdminAdminKycRouteImport
-      parentRoute: typeof AuthenticatedAdminAdminRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
   }
 }
 
-interface AuthenticatedAdminAdminRouteChildren {
+interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminAdminKycRoute: typeof AuthenticatedAdminAdminKycRoute
   AuthenticatedAdminAdminSupportRoute: typeof AuthenticatedAdminAdminSupportRoute
   AuthenticatedAdminAdminTransactionsRoute: typeof AuthenticatedAdminAdminTransactionsRoute
   AuthenticatedAdminAdminUsersRoute: typeof AuthenticatedAdminAdminUsersRoute
+  AuthenticatedAdminAdminIndexRoute: typeof AuthenticatedAdminAdminIndexRoute
 }
 
-const AuthenticatedAdminAdminRouteChildren: AuthenticatedAdminAdminRouteChildren =
+const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
     AuthenticatedAdminAdminKycRoute: AuthenticatedAdminAdminKycRoute,
     AuthenticatedAdminAdminSupportRoute: AuthenticatedAdminAdminSupportRoute,
     AuthenticatedAdminAdminTransactionsRoute:
       AuthenticatedAdminAdminTransactionsRoute,
     AuthenticatedAdminAdminUsersRoute: AuthenticatedAdminAdminUsersRoute,
-  }
-
-const AuthenticatedAdminAdminRouteWithChildren =
-  AuthenticatedAdminAdminRoute._addFileChildren(
-    AuthenticatedAdminAdminRouteChildren,
-  )
-
-interface AuthenticatedAdminRouteRouteChildren {
-  AuthenticatedAdminAdminRoute: typeof AuthenticatedAdminAdminRouteWithChildren
-}
-
-const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
-  {
-    AuthenticatedAdminAdminRoute: AuthenticatedAdminAdminRouteWithChildren,
+    AuthenticatedAdminAdminIndexRoute: AuthenticatedAdminAdminIndexRoute,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =
