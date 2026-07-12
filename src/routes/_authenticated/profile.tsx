@@ -26,6 +26,7 @@ function Profile() {
           <h1 className="text-2xl font-bold sm:text-3xl">Profile & Security</h1>
           <p className="text-sm text-muted-foreground">Manage your account details, password and transfer PIN.</p>
         </div>
+        <BankDetails />
         <Tabs defaultValue="profile">
           <TabsList><TabsTrigger value="profile">Profile</TabsTrigger><TabsTrigger value="password">Password</TabsTrigger><TabsTrigger value="pin">Transfer PIN</TabsTrigger></TabsList>
           <TabsContent value="profile" className="mt-6"><ProfileForm /></TabsContent>
@@ -34,6 +35,58 @@ function Profile() {
         </Tabs>
       </div>
     </AppShell>
+  );
+}
+
+function BankDetails() {
+  const { user } = useSession();
+  const { data: accounts } = useQuery({
+    queryKey: ["my-accounts", user?.id], enabled: !!user,
+    queryFn: async () => (await supabase.from("accounts").select("*").eq("user_id", user!.id)).data ?? [],
+  });
+  if (!accounts || accounts.length === 0) return null;
+  const LABELS: Record<string, { agency: string; account: string; extra?: string }> = {
+    USD: { agency: "Routing (ABA)", account: "Account number", extra: "SWIFT: IDGLUS33" },
+    CAD: { agency: "Transit / Institution", account: "Account number", extra: "SWIFT: IDGLCATT" },
+    VND: { agency: "Branch code", account: "Account number", extra: "SWIFT: IDGLVNVX" },
+    BRL: { agency: "Agência", account: "Conta", extra: "PIX (email): use your login email" },
+  };
+  async function copy(text: string, label: string) {
+    try { await navigator.clipboard.writeText(text); toast.success(`${label} copied`); } catch { toast.error("Copy failed"); }
+  }
+  return (
+    <Card className="border-border bg-card p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <div className="text-sm font-semibold">Your banking details</div>
+          <div className="text-xs text-muted-foreground">Share these with senders to receive funds.</div>
+        </div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {accounts.map((a) => {
+          const L = LABELS[a.currency] ?? LABELS.USD;
+          return (
+            <div key={a.id} className="rounded-lg border border-border/60 bg-accent/30 p-4">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span>{a.currency}</span>
+                <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary">Active</span>
+              </div>
+              <dl className="space-y-1.5 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted-foreground">{L.agency}</dt>
+                  <dd className="font-mono cursor-pointer" onClick={() => copy(a.agency_code ?? "", L.agency)}>{a.agency_code ?? "—"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted-foreground">{L.account}</dt>
+                  <dd className="font-mono cursor-pointer" onClick={() => copy(a.account_number, L.account)}>{a.account_number}</dd>
+                </div>
+                {L.extra && <div className="pt-1 text-[11px] text-muted-foreground">{L.extra}</div>}
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
