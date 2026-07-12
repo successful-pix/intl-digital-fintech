@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/_authenticated/_admin/admin")({
+export const Route = createFileRoute("/_authenticated/_admin/admin/")({
   head: () => ({ meta: [{ title: "Admin — International Digital" }] }),
   component: AdminHome,
 });
