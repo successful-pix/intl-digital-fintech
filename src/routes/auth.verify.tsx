@@ -108,7 +108,7 @@ function Verify() {
       <div className="absolute inset-0 bg-grid opacity-30" />
       <div className="absolute inset-x-0 top-0 h-[500px] bg-radial-glow" />
       <Card className="relative w-full max-w-md border-border bg-card/80 p-8 backdrop-blur-xl shadow-elegant animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <Link to="/auth" className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3 w-3" />Back</Link>
+        <Link to="/auth" search={{ mode: purpose === "signup" ? "register" : purpose === "reset" ? "forgot" : "login" }} className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3 w-3" />{purpose === "signup" ? "Back to registration" : "Back"}</Link>
         <Logo className="mb-6" />
         <h1 className="font-display text-2xl font-bold">{titles[purpose]}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{subtitles[purpose]} <span className="text-foreground">{email}</span></p>
