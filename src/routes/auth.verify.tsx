@@ -12,6 +12,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Logo } from "@/components/logo";
 import { supabase } from "@/integrations/supabase/client";
 import { verifyOtp, resendOtp } from "@/lib/auth-otp.functions";
+import { useEffect } from "react";
 
 const searchSchema = z.object({
   email: z.string().email(),
@@ -34,8 +35,15 @@ function Verify() {
   const [step, setStep] = useState<"code" | "new-password">("code");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
+  const [cooldown, setCooldown] = useState(30);
   const verify = useServerFn(verifyOtp);
   const resend = useServerFn(resendOtp);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   async function submitCode(codeVal: string) {
     setLoading(true);
@@ -77,9 +85,11 @@ function Verify() {
   }
 
   async function doResend() {
+    if (cooldown > 0) return;
     try {
       await resend({ data: { email, purpose } });
       toast.success("New code sent");
+      setCooldown(30);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not resend");
     }
