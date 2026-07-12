@@ -125,7 +125,9 @@ function Verify() {
             <Button onClick={() => submitCode(code)} disabled={loading || code.length < 6} className="mt-8 w-full gradient-primary text-primary-foreground">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
             </Button>
-            <button type="button" onClick={doResend} className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground">Didn't get it? Resend code</button>
+            <button type="button" onClick={doResend} disabled={cooldown > 0} className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
+              {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get it? Resend code"}
+            </button>
           </>
         ) : (
           <form onSubmit={submitNewPassword} className="mt-6 space-y-4">
