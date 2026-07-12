@@ -107,8 +107,18 @@ function DocUploader({ docKey, label, existing }: { docKey: string; label: strin
       } else {
         await supabase.from("kyc_documents").insert({ user_id: user.id, doc_type: docKey, storage_path: path });
       }
-      toast.success(`${label} uploaded`);
+      // Immediately mark KYC as pending review + notify user.
+      const { data: prof } = await supabase.from("profiles").select("kyc_status").eq("id", user.id).maybeSingle();
+      if (prof?.kyc_status !== "approved") {
+        await supabase.from("profiles").update({ kyc_status: "pending", kyc_rejection_reason: null }).eq("id", user.id);
+        await supabase.from("notifications").insert({
+          user_id: user.id, type: "system", title: "KYC submitted",
+          body: "Thanks — your identity documents are pending review.",
+        });
+      }
+      toast.success(`${label} uploaded — pending review`);
       qc.invalidateQueries({ queryKey: ["kyc-docs", user.id] });
+      qc.invalidateQueries({ queryKey: ["profile", user.id] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally { setBusy(false); if (fileRef.current) fileRef.current.value = ""; }

@@ -12,6 +12,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Logo } from "@/components/logo";
 import { supabase } from "@/integrations/supabase/client";
 import { verifyOtp, resendOtp } from "@/lib/auth-otp.functions";
+import { useEffect } from "react";
 
 const searchSchema = z.object({
   email: z.string().email(),
@@ -34,8 +35,15 @@ function Verify() {
   const [step, setStep] = useState<"code" | "new-password">("code");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
+  const [cooldown, setCooldown] = useState(30);
   const verify = useServerFn(verifyOtp);
   const resend = useServerFn(resendOtp);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   async function submitCode(codeVal: string) {
     setLoading(true);
@@ -77,9 +85,11 @@ function Verify() {
   }
 
   async function doResend() {
+    if (cooldown > 0) return;
     try {
       await resend({ data: { email, purpose } });
       toast.success("New code sent");
+      setCooldown(30);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not resend");
     }
@@ -98,7 +108,7 @@ function Verify() {
       <div className="absolute inset-0 bg-grid opacity-30" />
       <div className="absolute inset-x-0 top-0 h-[500px] bg-radial-glow" />
       <Card className="relative w-full max-w-md border-border bg-card/80 p-8 backdrop-blur-xl shadow-elegant animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <Link to="/auth" className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3 w-3" />Back</Link>
+        <Link to="/auth" search={{ mode: purpose === "signup" ? "register" : purpose === "reset" ? "forgot" : "login" }} className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3 w-3" />{purpose === "signup" ? "Back to registration" : "Back"}</Link>
         <Logo className="mb-6" />
         <h1 className="font-display text-2xl font-bold">{titles[purpose]}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{subtitles[purpose]} <span className="text-foreground">{email}</span></p>
@@ -115,7 +125,9 @@ function Verify() {
             <Button onClick={() => submitCode(code)} disabled={loading || code.length < 6} className="mt-8 w-full gradient-primary text-primary-foreground">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
             </Button>
-            <button type="button" onClick={doResend} className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground">Didn't get it? Resend code</button>
+            <button type="button" onClick={doResend} disabled={cooldown > 0} className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
+              {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get it? Resend code"}
+            </button>
           </>
         ) : (
           <form onSubmit={submitNewPassword} className="mt-6 space-y-4">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { MessageCircle, Send, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,8 +28,8 @@ export function SupportWidget() {
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  // Hide on the dedicated /support page (it has its own full-screen chat).
-  const hideOn = pathname.startsWith("/support") || pathname.startsWith("/auth") || pathname.startsWith("/admin");
+  // Hidden on the auth screens and admin console.
+  const hideOn = pathname.startsWith("/auth") || pathname.startsWith("/admin");
 
   const { data: unread = 0 } = useQuery({
     queryKey: ["support-unread", user?.id],
@@ -127,7 +127,7 @@ export function SupportWidget() {
             <div className="text-sm font-semibold">Support</div>
             <div className="text-xs text-muted-foreground">We usually reply within minutes</div>
           </div>
-          <Button asChild variant="ghost" size="sm"><Link to="/support" onClick={() => setOpen(false)}>Full view</Link></Button>
+          <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close"><X className="h-4 w-4" /></Button>
         </div>
         <div className="h-80 space-y-2 overflow-y-auto p-3">
           {messages.length === 0 && (
@@ -137,7 +137,11 @@ export function SupportWidget() {
             <div key={m.id} className={cn("flex", m.is_admin ? "justify-start" : "justify-end")}>
               <div className={cn("max-w-[80%] rounded-2xl px-3 py-2 text-sm",
                 m.is_admin ? "bg-accent" : "gradient-primary text-primary-foreground")}>
-                {m.image_url && <img src={m.image_url} alt="" className="mb-1 max-h-40 rounded-lg" />}
+                {m.image_url && (
+                  <a href={m.image_url} target="_blank" rel="noreferrer">
+                    <img src={m.image_url} alt="attachment" className="mb-1 max-h-40 cursor-zoom-in rounded-lg transition hover:opacity-90" />
+                  </a>
+                )}
                 {m.body}
               </div>
             </div>
