@@ -36,6 +36,6 @@ export function resendCodeLabel(cooldown: number) {
   return cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get it? Resend code";
 }
 
-export function shouldRedirectToDashboard(result: unknown) {
-  return !!result && typeof result === "object" && "access_token" in result && !!(result as { access_token?: string }).access_token;
+export function shouldRedirectToDashboard(result: unknown): result is { access_token: string; refresh_token: string } {
+  return !!result && typeof result === "object" && "access_token" in result && "refresh_token" in result && !!(result as { access_token?: string }).access_token;
 }

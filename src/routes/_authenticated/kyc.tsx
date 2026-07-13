@@ -38,15 +38,16 @@ function KycPage() {
   async function submit() {
     if (!user) return;
     if ((docs?.length ?? 0) === 0) return toast.error("Upload at least one document.");
-    await supabase.from("profiles").update({ kyc_status: "pending", kyc_rejection_reason: null }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ kyc_status: "pending", kyc_rejection_reason: null }).eq("id", user.id);
+    if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["profile", user.id] });
     toast.success("KYC submitted for review.");
   }
 
-  const status = profile?.kyc_status ?? "not_submitted";
+  const status = ((docs?.length ?? 0) > 0 && profile?.kyc_status !== "approved" && profile?.kyc_status !== "rejected") ? "pending" : (profile?.kyc_status ?? "not_submitted");
   const meta = {
     approved: { icon: ShieldCheck, cls: "bg-success/15 text-success", label: "Approved" },
-    pending: { icon: ShieldQuestion, cls: "bg-warning/15 text-warning", label: "Pending review" },
+    pending: { icon: ShieldQuestion, cls: "bg-warning/15 text-warning", label: "Pending Review" },
     rejected: { icon: ShieldAlert, cls: "bg-destructive/15 text-destructive", label: "Rejected" },
     not_submitted: { icon: ShieldQuestion, cls: "bg-muted text-muted-foreground", label: "Not submitted" },
   }[status];
@@ -110,7 +111,8 @@ function DocUploader({ docKey, label, existing }: { docKey: string; label: strin
       // Immediately mark KYC as pending review + notify user.
       const { data: prof } = await supabase.from("profiles").select("kyc_status").eq("id", user.id).maybeSingle();
       if (prof?.kyc_status !== "approved") {
-        await supabase.from("profiles").update({ kyc_status: "pending", kyc_rejection_reason: null }).eq("id", user.id);
+        const { error: statusError } = await supabase.from("profiles").update({ kyc_status: "pending", kyc_rejection_reason: null }).eq("id", user.id);
+        if (statusError) throw statusError;
         await supabase.from("notifications").insert({
           user_id: user.id, type: "system", title: "KYC submitted",
           body: "Thanks — your identity documents are pending review.",

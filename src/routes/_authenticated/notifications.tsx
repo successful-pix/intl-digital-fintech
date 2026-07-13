@@ -36,6 +36,15 @@ function NotificationsPage() {
     await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false);
     qc.invalidateQueries({ queryKey: ["notifications", user.id] });
     qc.invalidateQueries({ queryKey: ["notif-unread", user.id] });
+    qc.invalidateQueries({ queryKey: ["notif-latest", user.id] });
+  }
+
+  async function openNotification(id: string, read: boolean) {
+    if (!user || read) return;
+    await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", user.id);
+    qc.setQueryData(["notifications", user.id], (items: typeof data) => items?.map((item) => item.id === id ? { ...item, read: true } : item));
+    qc.setQueryData(["notif-unread", user.id], (count: number | undefined) => Math.max((count ?? 1) - 1, 0));
+    qc.invalidateQueries({ queryKey: ["notif-latest", user.id] });
   }
 
   return (
@@ -54,7 +63,7 @@ function NotificationsPage() {
           ) : (
             <ul className="divide-y divide-border/60">
               {data.map((n) => (
-                <li key={n.id} className={`flex items-start gap-3 p-4 sm:p-5 ${!n.read ? "bg-primary/[0.03]" : ""}`}>
+                <li key={n.id} onClick={() => openNotification(n.id, n.read)} className={`flex cursor-pointer items-start gap-3 p-4 sm:p-5 ${!n.read ? "bg-primary/[0.03]" : ""}`}>
                   <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-primary" style={{ opacity: n.read ? 0.2 : 1 }} />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium">{n.title}</div>

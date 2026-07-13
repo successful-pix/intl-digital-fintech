@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/use-session";
+import { hashTransferPin } from "@/lib/transfer-pin";
+import { LanguageSelector } from "@/components/language-selector";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Profile — International Digital" }] }),
@@ -27,6 +29,7 @@ function Profile() {
           <p className="text-sm text-muted-foreground">Manage your account details, password and transfer PIN.</p>
         </div>
         <BankDetails />
+        <LanguageCard />
         <Tabs defaultValue="profile">
           <TabsList><TabsTrigger value="profile">Profile</TabsTrigger><TabsTrigger value="password">Password</TabsTrigger><TabsTrigger value="pin">Transfer PIN</TabsTrigger></TabsList>
           <TabsContent value="profile" className="mt-6"><ProfileForm /></TabsContent>
@@ -35,6 +38,20 @@ function Profile() {
         </Tabs>
       </div>
     </AppShell>
+  );
+}
+
+function LanguageCard() {
+  return (
+    <Card className="border-border bg-card p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold">Language</div>
+          <div className="text-xs text-muted-foreground">Choose the language used across your account.</div>
+        </div>
+        <LanguageSelector />
+      </div>
+    </Card>
   );
 }
 
@@ -202,19 +219,13 @@ function PinForm() {
   const [pin, setPin] = useState({ next: "", confirm: "" });
   const [loading, setLoading] = useState(false);
 
-  async function hashPin(p: string) {
-    const buf = new TextEncoder().encode(p + (user?.id ?? ""));
-    const digest = await crypto.subtle.digest("SHA-256", buf);
-    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
-  }
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!/^\d{4,6}$/.test(pin.next)) return toast.error("PIN must be 4–6 digits.");
     if (pin.next !== pin.confirm) return toast.error("PINs don't match.");
     if (!user) return;
     setLoading(true);
-    const hash = await hashPin(pin.next);
+    const hash = await hashTransferPin(pin.next, user.id);
     const { error } = await supabase.from("profiles").update({ transfer_pin_hash: hash }).eq("id", user.id);
     setLoading(false);
     if (error) return toast.error(error.message);
