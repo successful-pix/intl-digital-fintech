@@ -12,16 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, type Currency } from "@/lib/currency";
 import { useSession } from "@/lib/use-session";
+import { hashTransferPin } from "@/lib/transfer-pin";
 
 export const Route = createFileRoute("/_authenticated/transfers")({
   head: () => ({ meta: [{ title: "Transfers — International Digital" }] }),
   component: Transfers,
 });
-
-async function sha256Hex(text: string) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 function Transfers() {
   const { user } = useSession();
@@ -52,7 +48,7 @@ function Transfers() {
 
     setBusy(true);
     try {
-      const pinHash = await sha256Hex(pin);
+      const pinHash = await hashTransferPin(pin, user.id);
       if (pinHash !== profile.transfer_pin_hash) throw new Error("Incorrect PIN.");
 
       // Resolve recipient by account number or email

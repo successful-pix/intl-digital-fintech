@@ -35,7 +35,8 @@ export function LanguageSelector() {
     setLanguage(readSavedLanguage());
     if (document.getElementById("google-translate-script")) return;
     window.googleTranslateElementInit = () => {
-      window.google?.translate?.TranslateElement?.({ pageLanguage: "en", autoDisplay: false }, "google_translate_element");
+      const TranslateElement = window.google?.translate?.TranslateElement;
+      if (TranslateElement) new TranslateElement({ pageLanguage: "en", autoDisplay: false }, "google_translate_element");
     };
     const script = document.createElement("script");
     script.id = "google-translate-script";
@@ -49,7 +50,7 @@ export function LanguageSelector() {
     localStorage.setItem(STORAGE_KEY, next);
     setTranslateCookie(next);
     if (user) {
-      await supabase.from("profiles").update({ preferred_language: next }).eq("id", user.id);
+      await supabase.from("profiles").update({ preferred_language: next } as never).eq("id", user.id);
     }
     toast.success(next === DEFAULT_LANGUAGE ? "Language reset to English" : "Language updated");
     window.location.reload();
