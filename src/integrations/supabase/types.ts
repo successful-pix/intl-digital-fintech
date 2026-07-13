@@ -153,6 +153,7 @@ export type Database = {
           kyc_rejection_reason: string | null
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           phone: string | null
+          preferred_language: string
           transfer_pin_hash: string | null
           updated_at: string
         }
@@ -165,6 +166,7 @@ export type Database = {
           kyc_rejection_reason?: string | null
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           phone?: string | null
+          preferred_language?: string
           transfer_pin_hash?: string | null
           updated_at?: string
         }
@@ -177,6 +179,7 @@ export type Database = {
           kyc_rejection_reason?: string | null
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           phone?: string | null
+          preferred_language?: string
           transfer_pin_hash?: string | null
           updated_at?: string
         }
