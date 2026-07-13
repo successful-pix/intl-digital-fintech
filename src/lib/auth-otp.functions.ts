@@ -73,8 +73,11 @@ export const startLogin = createServerFn({ method: "POST" })
     const { createClient } = await import("@supabase/supabase-js");
     const email = data.email.toLowerCase().trim();
 
-    // Verify password server-side using a fresh anon client.
-    const tmp = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    // Verify password server-side using a fresh public client.
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey) throw new Error("Authentication service is not configured correctly.");
+    const tmp = createClient(supabaseUrl, supabaseKey, {
       auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     });
     const { data: signed, error } = await tmp.auth.signInWithPassword({ email, password: data.password });
@@ -160,7 +163,10 @@ export const verifyOtp = createServerFn({ method: "POST" })
       const { data: link } = await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email });
       const hashed_token = link?.properties?.hashed_token;
       if (!hashed_token) throw new Error("Could not create session.");
-      const tmp = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_ANON_KEY ?? process.env.SUPABASE_PUBLISHABLE_KEY;
+      if (!supabaseUrl || !supabaseKey) throw new Error("Authentication service is not configured correctly.");
+      const tmp = createClient(supabaseUrl, supabaseKey, {
         auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
       });
       const { data: verified, error } = await tmp.auth.verifyOtp({ token_hash: hashed_token, type: "magiclink" });

@@ -13,6 +13,7 @@ import { Logo } from "@/components/logo";
 import { supabase } from "@/integrations/supabase/client";
 import { verifyOtp, resendOtp } from "@/lib/auth-otp.functions";
 import { useEffect } from "react";
+import { clearRegistrationDraft, resendCodeLabel, shouldRedirectToDashboard } from "@/lib/auth-flow";
 
 const searchSchema = z.object({
   email: z.string().email(),
@@ -55,8 +56,9 @@ function Verify() {
         setStep("new-password");
       } else {
         const res = await verify({ data: { email, purpose, code: codeVal } });
-        if (res && "access_token" in res && res.access_token) {
+        if (shouldRedirectToDashboard(res)) {
           await supabase.auth.setSession({ access_token: res.access_token, refresh_token: res.refresh_token });
+          if (purpose === "signup") clearRegistrationDraft();
           toast.success(purpose === "signup" ? "Welcome to International Digital!" : "Signed in");
           navigate({ to: "/dashboard" });
         }
@@ -126,7 +128,7 @@ function Verify() {
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify
             </Button>
             <button type="button" onClick={doResend} disabled={cooldown > 0} className="mt-4 w-full text-center text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
-              {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get it? Resend code"}
+              {resendCodeLabel(cooldown)}
             </button>
           </>
         ) : (

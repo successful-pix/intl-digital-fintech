@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { CURRENCIES, type Currency } from "@/lib/currency";
 import { startSignup, startLogin, startReset } from "@/lib/auth-otp.functions";
+import { loadRegistrationDraft, normalizeEmail, saveRegistrationDraft } from "@/lib/auth-flow";
 
 const searchSchema = z.object({ mode: z.enum(["login", "register", "forgot"]).optional() });
 
@@ -78,9 +79,10 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login({ data: { email, password } });
+      const cleanEmail = normalizeEmail(email);
+      await login({ data: { email: cleanEmail, password } });
       toast.success("We sent you a 6-digit code");
-      navigate({ to: "/auth/verify", search: { email, purpose: "login" } });
+      navigate({ to: "/auth/verify", search: { email: cleanEmail, purpose: "login" } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign-in failed");
     } finally {
@@ -105,14 +107,21 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const signup = useServerFn(startSignup);
 
+  useEffect(() => {
+    const draft = loadRegistrationDraft();
+    if (draft) setForm(draft);
+  }, []);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (form.password.length < 8) return toast.error("Password must be at least 8 characters.");
     setLoading(true);
     try {
-      await signup({ data: form });
+      const draft = { ...form, email: normalizeEmail(form.email) };
+      saveRegistrationDraft(draft);
+      await signup({ data: draft });
       toast.success("Check your email for a 6-digit verification code.");
-      navigate({ to: "/auth/verify", search: { email: form.email, purpose: "signup" } });
+      navigate({ to: "/auth/verify", search: { email: draft.email, purpose: "signup" } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed.");
     } finally {
@@ -154,9 +163,10 @@ function ForgotForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      await reset({ data: { email } });
+      const cleanEmail = normalizeEmail(email);
+      await reset({ data: { email: cleanEmail } });
       toast.success("If that email exists, we sent a 6-digit code.");
-      navigate({ to: "/auth/verify", search: { email, purpose: "reset" } });
+      navigate({ to: "/auth/verify", search: { email: cleanEmail, purpose: "reset" } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not send code.");
     } finally {

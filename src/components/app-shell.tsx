@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/use-session";
 import { SupportWidget } from "@/components/support-widget";
+import { LanguageSelector } from "@/components/language-selector";
 
 
 const nav = [
@@ -50,7 +51,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           toast(n.title, { description: n.body ?? undefined });
           qc.invalidateQueries({ queryKey: ["notif-unread", user.id] });
           qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+          qc.invalidateQueries({ queryKey: ["notif-latest", user.id] });
         })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, () => {
+        qc.invalidateQueries({ queryKey: ["notif-unread", user.id] });
+        qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+        qc.invalidateQueries({ queryKey: ["notif-latest", user.id] });
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => {
         qc.invalidateQueries({ queryKey: ["recent-tx"] });
         qc.invalidateQueries({ queryKey: ["all-tx"] });
@@ -161,6 +168,15 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
     await supabase.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false);
     qc.invalidateQueries({ queryKey: ["notif-unread", user.id] });
     qc.invalidateQueries({ queryKey: ["notif-latest", user.id] });
+    qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+  }
+
+  async function openNotification(id: string, read: boolean) {
+    if (!user || read) return;
+    await supabase.from("notifications").update({ read: true }).eq("id", id).eq("user_id", user.id);
+    qc.setQueryData(["notif-unread", user.id], (count: number | undefined) => Math.max((count ?? 1) - 1, 0));
+    qc.invalidateQueries({ queryKey: ["notif-latest", user.id] });
+    qc.invalidateQueries({ queryKey: ["notifications", user.id] });
   }
 
   const initials = (profile?.full_name ?? profile?.email ?? "?").split(" ").map((s) => s[0]).slice(0,2).join("").toUpperCase();
@@ -171,6 +187,7 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
       <div className="hidden lg:block" />
       <div className="flex items-center gap-1.5">
         <ThemeToggle />
+        <LanguageSelector />
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
@@ -186,7 +203,7 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
             <ul className="max-h-80 divide-y divide-border/60 overflow-y-auto">
               {latest.length === 0 && <li className="p-6 text-center text-sm text-muted-foreground">No notifications yet.</li>}
               {latest.map((n) => (
-                <li key={n.id} className={cn("p-3 text-sm", !n.read && "bg-primary/[0.04]")}>
+                <li key={n.id} onClick={() => openNotification(n.id, n.read)} className={cn("cursor-pointer p-3 text-sm", !n.read && "bg-primary/[0.04]")}>
                   <div className="font-medium">{n.title}</div>
                   {n.body && <div className="text-xs text-muted-foreground">{n.body}</div>}
                   <div className="mt-1 text-[10px] text-muted-foreground">{new Date(n.created_at).toLocaleString()}</div>
