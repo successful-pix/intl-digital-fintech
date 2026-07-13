@@ -15,7 +15,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { CURRENCIES, type Currency } from "@/lib/currency";
 import { startSignup, startLogin, startReset } from "@/lib/auth-otp.functions";
-import { normalizeEmail, saveRegistrationDraft } from "@/lib/auth-flow";
+import { loadRegistrationDraft, normalizeEmail, saveRegistrationDraft } from "@/lib/auth-flow";
 
 const searchSchema = z.object({ mode: z.enum(["login", "register", "forgot"]).optional() });
 
@@ -106,6 +106,11 @@ function RegisterForm() {
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", password: "", currency: "USD" as Currency });
   const [loading, setLoading] = useState(false);
   const signup = useServerFn(startSignup);
+
+  useEffect(() => {
+    const draft = loadRegistrationDraft();
+    if (draft) setForm(draft);
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
