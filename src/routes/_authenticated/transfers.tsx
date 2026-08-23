@@ -52,7 +52,7 @@ function Transfers() {
       const { error } = await supabase.rpc("submit_transfer", {
         _recipient: recipient.trim(),
         _amount: amt,
-        _description: description || null,
+        _description: description,
         _pin: pin,
       });
       if (error) throw error;
