@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/use-session";
-import { hashTransferPin } from "@/lib/transfer-pin";
 import { LanguageSelector } from "@/components/language-selector";
 
 export const Route = createFileRoute("/_authenticated/profile")({

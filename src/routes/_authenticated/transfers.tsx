@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, type Currency } from "@/lib/currency";
 import { useSession } from "@/lib/use-session";
-import { hashTransferPin } from "@/lib/transfer-pin";
 
 export const Route = createFileRoute("/_authenticated/transfers")({
   head: () => ({ meta: [{ title: "Transfers — International Digital" }] }),
