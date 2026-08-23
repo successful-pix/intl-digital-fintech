@@ -224,8 +224,8 @@ function PinForm() {
     if (pin.next !== pin.confirm) return toast.error("PINs don't match.");
     if (!user) return;
     setLoading(true);
-    const hash = await hashTransferPin(pin.next, user.id);
-    const { error } = await supabase.from("profiles").update({ transfer_pin_hash: hash }).eq("id", user.id);
+    // PIN is hashed and stored server-side; the hash is never exposed to the client.
+    const { error } = await supabase.rpc("set_transfer_pin", { _pin: pin.next });
     setLoading(false);
     if (error) return toast.error(error.message);
     setPin({ next: "", confirm: "" });
