@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMoney, type Currency } from "@/lib/currency";
 import { useSession } from "@/lib/use-session";
-import { hashTransferPin } from "@/lib/transfer-pin";
 
 export const Route = createFileRoute("/_authenticated/transfers")({
   head: () => ({ meta: [{ title: "Transfers — International Digital" }] }),
@@ -32,62 +31,29 @@ function Transfers() {
     queryKey: ["my-account", user?.id], enabled: !!user,
     queryFn: async () => (await supabase.from("accounts").select("*").eq("user_id", user!.id).maybeSingle()).data,
   });
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id], enabled: !!user,
-    queryFn: async () => (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data,
+  const { data: hasPin } = useQuery({
+    queryKey: ["has-transfer-pin", user?.id], enabled: !!user,
+    queryFn: async () => (await supabase.rpc("has_transfer_pin")).data === true,
   });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !account || !profile) return;
+    if (!user || !account) return;
     const amt = parseFloat(amount);
     if (!isFinite(amt) || amt <= 0) return toast.error("Enter a valid amount.");
     if (amt > Number(account.balance)) return toast.error("Insufficient balance.");
-    if (!profile.transfer_pin_hash) return toast.error("Set your Transfer PIN in Profile first.");
-    if (!pin || pin.length < 4) return toast.error("Enter your Transfer PIN.");
+    if (!hasPin) return toast.error("Set your Transfer PIN in Profile first.");
+    if (!/^\d{4,6}$/.test(pin)) return toast.error("Enter your 4–6 digit Transfer PIN.");
 
     setBusy(true);
     try {
-      const pinHash = await hashTransferPin(pin, user.id);
-      if (pinHash !== profile.transfer_pin_hash) throw new Error("Incorrect PIN.");
-
-      // Resolve recipient by account number or email
-      const rc = recipient.trim();
-      let recvAccount: { id: string; user_id: string; currency: string } | null = null;
-      let recvProfile: { id: string; full_name: string | null; email: string } | null = null;
-
-      const byNum = await supabase.from("accounts").select("id,user_id,currency").eq("account_number", rc).maybeSingle();
-      if (byNum.data) {
-        recvAccount = byNum.data;
-      } else {
-        const p = await supabase.from("profiles").select("id,full_name,email").eq("email", rc.toLowerCase()).maybeSingle();
-        if (p.data) {
-          recvProfile = p.data;
-          const a = await supabase.from("accounts").select("id,user_id,currency").eq("user_id", p.data.id).maybeSingle();
-          recvAccount = a.data;
-        }
-      }
-      if (!recvAccount) throw new Error("Recipient not found.");
-      if (recvAccount.user_id === user.id) throw new Error("Cannot transfer to yourself.");
-      if (recvAccount.currency !== account.currency) throw new Error("Currency mismatch with recipient account.");
-
-      if (!recvProfile) {
-        const p = await supabase.from("profiles").select("id,full_name,email").eq("id", recvAccount.user_id).maybeSingle();
-        recvProfile = p.data;
-      }
-
-      const { error } = await supabase.from("transactions").insert({
-        tx_type: "transfer",
-        status: "pending",
-        amount: amt,
-        currency: account.currency,
-        sender_account_id: account.id,
-        sender_user_id: user.id,
-        sender_name: profile.full_name ?? profile.email,
-        receiver_account_id: recvAccount.id,
-        receiver_user_id: recvAccount.user_id,
-        receiver_name: recvProfile?.full_name ?? recvProfile?.email ?? "Recipient",
-        description: description || null,
+      // PIN is verified server-side inside submit_transfer before the
+      // pending transaction is created; the client never sees the hash.
+      const { error } = await supabase.rpc("submit_transfer", {
+        _recipient: recipient.trim(),
+        _amount: amt,
+        _description: description,
+        _pin: pin,
       });
       if (error) throw error;
 

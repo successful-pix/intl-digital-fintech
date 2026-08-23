@@ -154,7 +154,6 @@ export type Database = {
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           phone: string | null
           preferred_language: string
-          transfer_pin_hash: string | null
           updated_at: string
         }
         Insert: {
@@ -167,7 +166,6 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           phone?: string | null
           preferred_language?: string
-          transfer_pin_hash?: string | null
           updated_at?: string
         }
         Update: {
@@ -180,7 +178,6 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           phone?: string | null
           preferred_language?: string
-          transfer_pin_hash?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -308,6 +305,24 @@ export type Database = {
           },
         ]
       }
+      transfer_pins: {
+        Row: {
+          pin_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          pin_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          pin_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -371,9 +386,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_transfer_pin: { Args: never; Returns: boolean }
       process_transfer: {
         Args: { _approve: boolean; _tx_id: string }
         Returns: undefined
+      }
+      set_transfer_pin: { Args: { _pin: string }; Returns: undefined }
+      submit_transfer: {
+        Args: {
+          _amount: number
+          _description: string
+          _pin: string
+          _recipient: string
+        }
+        Returns: string
       }
       support_unread_for_user: { Args: { _user_id: string }; Returns: number }
     }
