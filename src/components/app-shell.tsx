@@ -69,21 +69,55 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-border bg-sidebar lg:flex lg:flex-col">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
         <SidebarBody isAdmin={!!isAdmin} />
       </aside>
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent side="left" className="w-64 border-border bg-sidebar p-0"><SidebarBody isAdmin={!!isAdmin} onNav={() => setOpenMobile(false)} /></SheetContent>
       </Sheet>
-      <div className="lg:pl-60">
+      <div className="lg:pl-64">
         <Topbar onOpenMobile={() => setOpenMobile(true)} />
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto max-w-6xl px-4 py-6 pb-28 sm:px-6 lg:px-8 lg:pb-10">
           <BlockedBanner />
           <div className="animate-in fade-in duration-300">{children}</div>
         </main>
       </div>
+      <MobileTabBar onOpenMore={() => setOpenMobile(true)} />
       <SupportWidget />
     </div>
+  );
+}
+
+const tabItems = [
+  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { to: "/transfers", label: "Transfers", icon: ArrowLeftRight },
+  { to: "/transactions", label: "Activity", icon: Receipt },
+  { to: "/notifications", label: "Alerts", icon: Bell },
+] as const;
+
+function MobileTabBar({ onOpenMore }: { onOpenMore: () => void }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 pb-safe backdrop-blur-xl lg:hidden">
+      <div className="grid grid-cols-5">
+        {tabItems.map((item) => {
+          const active = pathname === item.to || pathname.startsWith(item.to + "/");
+          return (
+            <Link key={item.to} to={item.to}
+              className={cn("flex min-h-16 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition",
+                active ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+              <item.icon className={cn("h-5 w-5", active && "scale-110")} strokeWidth={active ? 2.4 : 2} />
+              {item.label}
+            </Link>
+          );
+        })}
+        <button onClick={onOpenMore}
+          className="flex min-h-16 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium text-muted-foreground transition hover:text-foreground">
+          <Menu className="h-5 w-5" strokeWidth={2} />
+          More
+        </button>
+      </div>
+    </nav>
   );
 }
 
@@ -113,17 +147,17 @@ function SidebarBody({ onNav, isAdmin }: { onNav?: () => void; isAdmin: boolean 
           const active = pathname === item.to || pathname.startsWith(item.to + "/");
           return (
             <Link key={item.to} to={item.to} onClick={onNav}
-              className={cn("group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground")}>
-              <item.icon className={cn("h-4 w-4", active && "text-primary")} />
+              className={cn("group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition",
+                active ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-card" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground")}>
+              <item.icon className={cn("h-[18px] w-[18px]", active && "text-primary")} strokeWidth={active ? 2.4 : 2} />
               {item.label}
             </Link>
           );
         })}
         {isAdmin && (
           <Link to="/admin" onClick={onNav}
-            className={cn("mt-4 flex items-center gap-3 rounded-lg border border-primary/30 px-3 py-2 text-sm text-primary transition hover:bg-primary/10")}>
-            <Shield className="h-4 w-4" />Admin
+            className={cn("mt-4 flex items-center gap-3 rounded-xl border border-primary/30 px-3.5 py-2.5 text-sm font-medium text-primary transition hover:bg-primary/10")}>
+            <Shield className="h-[18px] w-[18px]" />Admin
           </Link>
         )}
       </nav>
@@ -182,10 +216,10 @@ function Topbar({ onOpenMobile }: { onOpenMobile: () => void }) {
   const initials = (profile?.full_name ?? profile?.email ?? "?").split(" ").map((s) => s[0]).slice(0,2).join("").toUpperCase();
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background/70 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenMobile}><Menu className="h-5 w-5" /></Button>
       <div className="hidden lg:block" />
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <ThemeToggle />
         <LanguageSelector />
         <Popover>
