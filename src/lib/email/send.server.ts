@@ -1,5 +1,5 @@
 // Server-only email sender for International Digital.
-// Uses Resend directly from the Vercel server environment.
+// Uses Resend directly from the server environment.
 // NEVER expose RESEND_API_KEY to client-side code.
 
 const FROM_NAME = "International Digital";
@@ -19,19 +19,15 @@ export async function sendEmail(opts: {
 
   if (!RESEND_API_KEY) {
     console.error("[email] RESEND_API_KEY is missing");
-    throw new Error(
-      "Email service is not configured. Please contact support."
-    );
+    throw new Error("Email service is not configured. Please contact support.");
   }
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
-
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${RESEND_API_KEY}`,
     },
-
     body: JSON.stringify({
       from: `${FROM_NAME} <${FROM_ADDRESS}>`,
       to: [opts.to],
