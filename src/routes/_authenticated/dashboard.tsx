@@ -43,52 +43,73 @@ function Dashboard() {
       <div className="space-y-6">
         <div>
           <p className="text-sm text-muted-foreground">Welcome back</p>
-          <h1 className="text-2xl font-bold sm:text-3xl">Hi, {firstName} 👋</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Hi, {firstName} 👋</h1>
         </div>
 
         {/* Balance card */}
-        <Card className="relative overflow-hidden border-border bg-card p-6 sm:p-8">
+        <Card className="relative overflow-hidden rounded-2xl border-border bg-card p-6 shadow-card sm:p-8">
           <div className="absolute inset-0 bg-radial-glow opacity-40" />
-          <div className="relative grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
-            <div>
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Available balance</div>
-              <div className="mt-3 flex items-baseline gap-3">
-                {isLoading ? <Skeleton className="h-12 w-64" /> : (
-                  <span className="font-display text-4xl font-bold sm:text-5xl">
-                    {formatMoney(first?.balance ?? 0, currency)}
-                  </span>
-                )}
-                <span className="text-sm text-muted-foreground">{CURRENCIES[currency].flag} {currency}</span>
-              </div>
-              {first && (
-                <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="font-mono">{first.account_number}</span>
-                  <StatusPill status={first.status} />
+          <div className="relative">
+            <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-end">
+              <div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Available balance</div>
+                  {first && <StatusPill status={first.status} />}
                 </div>
-              )}
+                <div className="mt-3 flex items-baseline gap-3">
+                  {isLoading ? <Skeleton className="h-12 w-64" /> : (
+                    <span className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
+                      {formatMoney(first?.balance ?? 0, currency)}
+                    </span>
+                  )}
+                  <span className="text-sm font-medium text-muted-foreground">{CURRENCIES[currency].flag} {currency}</span>
+                </div>
+                {first && (
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    <span className="font-mono">{first.account_number}</span>
+                  </div>
+                )}
+              </div>
+              <div className="hidden flex-wrap gap-2 md:flex">
+                <Button asChild className="gradient-primary text-primary-foreground"><Link to="/transfers"><Send className="mr-2 h-4 w-4" />Send</Link></Button>
+                <Button asChild variant="outline"><Link to="/transactions"><Receipt className="mr-2 h-4 w-4" />History</Link></Button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button asChild className="gradient-primary text-primary-foreground"><Link to="/transfers"><Send className="mr-2 h-4 w-4" />Send</Link></Button>
-              <Button asChild variant="outline"><Link to="/transactions"><Receipt className="mr-2 h-4 w-4" />History</Link></Button>
+            {/* Card action row */}
+            <div className="mt-6 grid grid-cols-4 gap-2 border-t border-border/60 pt-5 md:hidden">
+              {[
+                { icon: Send, label: "Send", to: "/transfers" as const },
+                { icon: ArrowDownLeft, label: "Deposit", to: "/deposits" as const },
+                { icon: Receipt, label: "History", to: "/transactions" as const },
+                { icon: Plus, label: "Verify", to: "/kyc" as const },
+              ].map((a) => (
+                <Link key={a.label} to={a.to} className="flex flex-col items-center gap-1.5">
+                  <span className="grid h-11 w-11 place-items-center rounded-full bg-accent text-primary transition group-active:scale-95"><a.icon className="h-[18px] w-[18px]" /></span>
+                  <span className="text-[11px] font-medium text-muted-foreground">{a.label}</span>
+                </Link>
+              ))}
             </div>
           </div>
         </Card>
 
         {/* Quick actions */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { icon: Send, label: "Send money", to: "/transfers" as const },
-            { icon: ArrowLeftRight, label: "Deposits", to: "/deposits" as const },
-            { icon: Receipt, label: "Receipts", to: "/transactions" as const },
-            { icon: Plus, label: "Complete KYC", to: "/kyc" as const },
-          ].map((a) => (
-            <Link key={a.label} to={a.to}>
-              <Card className="flex items-center gap-3 border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-glow">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-accent"><a.icon className="h-4 w-4 text-primary" /></div>
-                <span className="text-sm font-medium">{a.label}</span>
-              </Card>
-            </Link>
-          ))}
+        <div>
+          <h2 className="mb-3 text-base font-semibold">Quick actions</h2>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { icon: Send, label: "Send money", to: "/transfers" as const },
+              { icon: ArrowLeftRight, label: "Deposits", to: "/deposits" as const },
+              { icon: Receipt, label: "Receipts", to: "/transactions" as const },
+              { icon: Plus, label: "Complete KYC", to: "/kyc" as const },
+            ].map((a) => (
+              <Link key={a.label} to={a.to}>
+                <Card className="flex h-full min-h-24 flex-col items-center justify-center gap-2.5 rounded-2xl border-border bg-card p-3 text-center shadow-card transition hover:border-primary/40 hover:shadow-lift active:scale-[0.98]">
+                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent"><a.icon className="h-5 w-5 text-primary" /></div>
+                  <span className="text-xs font-medium leading-tight">{a.label}</span>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Recent activity */}

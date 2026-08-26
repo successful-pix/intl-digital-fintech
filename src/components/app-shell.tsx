@@ -147,17 +147,17 @@ function SidebarBody({ onNav, isAdmin }: { onNav?: () => void; isAdmin: boolean 
           const active = pathname === item.to || pathname.startsWith(item.to + "/");
           return (
             <Link key={item.to} to={item.to} onClick={onNav}
-              className={cn("group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground")}>
-              <item.icon className={cn("h-4 w-4", active && "text-primary")} />
+              className={cn("group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition",
+                active ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-card" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground")}>
+              <item.icon className={cn("h-[18px] w-[18px]", active && "text-primary")} strokeWidth={active ? 2.4 : 2} />
               {item.label}
             </Link>
           );
         })}
         {isAdmin && (
           <Link to="/admin" onClick={onNav}
-            className={cn("mt-4 flex items-center gap-3 rounded-lg border border-primary/30 px-3 py-2 text-sm text-primary transition hover:bg-primary/10")}>
-            <Shield className="h-4 w-4" />Admin
+            className={cn("mt-4 flex items-center gap-3 rounded-xl border border-primary/30 px-3.5 py-2.5 text-sm font-medium text-primary transition hover:bg-primary/10")}>
+            <Shield className="h-[18px] w-[18px]" />Admin
           </Link>
         )}
       </nav>
