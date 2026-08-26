@@ -51,7 +51,8 @@
 
   --shadow-elegant: 0 20px 60px -30px color-mix(in oklab, var(--primary) 45%, transparent);
   --shadow-glow: 0 0 40px color-mix(in oklab, var(--primary) 35%, transparent);
-  --shadow-card: 0 1px 0 0 color-mix(in oklab, var(--foreground) 5%, transparent), 0 10px 30px -15px color-mix(in oklab, black 40%, transparent);
+  --shadow-card: 0 1px 2px color-mix(in oklab, black 5%, transparent), 0 12px 32px -16px color-mix(in oklab, black 18%, transparent);
+  --shadow-lift: 0 2px 6px color-mix(in oklab, black 6%, transparent), 0 20px 44px -20px color-mix(in oklab, black 24%, transparent);
 }
 
 /* Dark theme (default — "Deep Charcoal + Electric Blue") */
