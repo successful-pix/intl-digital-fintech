@@ -182,3 +182,8 @@
 @utility shadow-elegant { box-shadow: var(--shadow-elegant); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
 @utility shadow-card { box-shadow: var(--shadow-card); }
+@utility shadow-lift { box-shadow: var(--shadow-lift); }
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
