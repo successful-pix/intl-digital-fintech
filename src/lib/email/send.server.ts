@@ -1,25 +1,37 @@
-// Server-only helper to send email via the Resend connector gateway.
-// Do NOT import from client bundles — this file's *.server.ts suffix keeps it server-only.
-
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
+// Server-only email sender for International Digital.
+// Uses Resend directly from the Vercel server environment.
+// NEVER expose RESEND_API_KEY to client-side code.
 
 const FROM_NAME = "International Digital";
-const FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS ?? "support@internationaldigital.online";
-const REPLY_TO = process.env.EMAIL_REPLY_TO ?? FROM_ADDRESS;
 
-export async function sendEmail(opts: { to: string; subject: string; html: string }): Promise<void> {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
+const FROM_ADDRESS =
+  process.env.EMAIL_FROM_ADDRESS ?? "support@internationaldigital.online";
+
+const REPLY_TO =
+  process.env.EMAIL_REPLY_TO ?? FROM_ADDRESS;
+
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<void> {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  if (!LOVABLE_API_KEY || !RESEND_API_KEY) {
-    throw new Error("Email is not configured (missing LOVABLE_API_KEY or RESEND_API_KEY).");
+
+  if (!RESEND_API_KEY) {
+    console.error("[email] RESEND_API_KEY is missing");
+    throw new Error(
+      "Email service is not configured. Please contact support."
+    );
   }
-  const res = await fetch(`${GATEWAY_URL}/emails`, {
+
+  const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
+
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": RESEND_API_KEY,
+      Authorization: `Bearer ${RESEND_API_KEY}`,
     },
+
     body: JSON.stringify({
       from: `${FROM_NAME} <${FROM_ADDRESS}>`,
       to: [opts.to],
@@ -28,9 +40,18 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
       html: opts.html,
     }),
   });
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`[email] Resend failed [${res.status}]: ${body}`);
-    throw new Error(`Failed to send email (${res.status})`);
+
+  if (!response.ok) {
+    const body = await response.text();
+
+    console.error(
+      `[email] Resend failed [${response.status}]: ${body}`
+    );
+
+    throw new Error(
+      "Unable to send verification email. Please try again."
+    );
   }
+
+  console.log(`[email] Verification email sent to ${opts.to}`);
 }
