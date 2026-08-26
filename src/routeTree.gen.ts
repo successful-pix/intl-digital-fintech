@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthenticatedTransfersRouteImport } from './routes/_authenticated/transfers'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
   id: '/verify',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/auth/': typeof AuthIndexRoute
   '/admin/kyc': typeof AuthenticatedAdminAdminKycRoute
   '/admin/support': typeof AuthenticatedAdminAdminSupportRoute
   '/admin/transactions': typeof AuthenticatedAdminAdminTransactionsRoute
@@ -151,7 +158,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/deposits': typeof AuthenticatedDepositsRoute
   '/kyc': typeof AuthenticatedKycRoute
@@ -162,6 +168,7 @@ export interface FileRoutesByTo {
   '/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/auth': typeof AuthIndexRoute
   '/admin/kyc': typeof AuthenticatedAdminAdminKycRoute
   '/admin/support': typeof AuthenticatedAdminAdminSupportRoute
   '/admin/transactions': typeof AuthenticatedAdminAdminTransactionsRoute
@@ -184,6 +191,7 @@ export interface FileRoutesById {
   '/_authenticated/transfers': typeof AuthenticatedTransfersRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/auth/': typeof AuthIndexRoute
   '/_authenticated/_admin/admin/kyc': typeof AuthenticatedAdminAdminKycRoute
   '/_authenticated/_admin/admin/support': typeof AuthenticatedAdminAdminSupportRoute
   '/_authenticated/_admin/admin/transactions': typeof AuthenticatedAdminAdminTransactionsRoute
@@ -205,6 +213,7 @@ export interface FileRouteTypes {
     | '/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
+    | '/auth/'
     | '/admin/kyc'
     | '/admin/support'
     | '/admin/transactions'
@@ -213,7 +222,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/auth'
     | '/dashboard'
     | '/deposits'
     | '/kyc'
@@ -224,6 +232,7 @@ export interface FileRouteTypes {
     | '/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
+    | '/auth'
     | '/admin/kyc'
     | '/admin/support'
     | '/admin/transactions'
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transfers'
     | '/auth/reset-password'
     | '/auth/verify'
+    | '/auth/'
     | '/_authenticated/_admin/admin/kyc'
     | '/_authenticated/_admin/admin/support'
     | '/_authenticated/_admin/admin/transactions'
@@ -280,6 +290,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/auth/verify': {
       id: '/auth/verify'
@@ -449,11 +466,13 @@ const AuthenticatedRouteRouteWithChildren =
 interface AuthRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  AuthIndexRoute: AuthIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
