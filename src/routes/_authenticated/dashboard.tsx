@@ -113,7 +113,7 @@ function Dashboard() {
         </div>
 
         {/* Recent activity */}
-        <Card className="border-border bg-card">
+        <Card className="rounded-2xl border-border bg-card shadow-card">
           <div className="flex items-center justify-between border-b border-border/60 p-5">
             <h2 className="text-base font-semibold">Recent transactions</h2>
             <Button asChild variant="ghost" size="sm"><Link to="/transactions">View all</Link></Button>
