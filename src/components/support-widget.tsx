@@ -18,7 +18,7 @@ type SupportMessage = {
   created_at: string;
 };
 
-export function Support() {
+export function SupportWidget() {
   const { user } = useSession();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const qc = useQueryClient();
