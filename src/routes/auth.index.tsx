@@ -1,5 +1,4 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -14,14 +13,22 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { supabase } from "@/integrations/supabase/client";
 import { CURRENCIES, type Currency } from "@/lib/currency";
-import { startSignup, startLogin, startReset } from "@/lib/auth-otp.functions";
-import { loadRegistrationDraft, normalizeEmail, saveRegistrationDraft } from "@/lib/auth-flow";
+import { loadRegistrationDraft, normalizeEmail, saveRegistrationDraft, clearRegistrationDraft } from "@/lib/auth-flow";
 
 const searchSchema = z.object({ mode: z.enum(["login", "register", "forgot"]).optional() });
 
 export const Route = createFileRoute("/auth/")({
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({ meta: [{ title: "Sign in — International Digital" }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — International Digital" },
+      { name: "description", content: "Sign in or open your International Digital multi-currency account in USD, CAD, VND or BRL." },
+      { property: "og:title", content: "Sign in — International Digital" },
+      { property: "og:description", content: "Secure access to your International Digital accounts." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: AuthPage,
 });
 
@@ -73,16 +80,24 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const login = useServerFn(startLogin);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       const cleanEmail = normalizeEmail(email);
-      await login({ data: { email: cleanEmail, password } });
-      toast.success("We sent you a 6-digit code");
-      navigate({ to: "/auth/verify", search: { email: cleanEmail, purpose: "login" } });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+      if (error) {
+        if (error.message.toLowerCase().includes("not confirmed")) {
+          toast.error("Please confirm your email first — check your inbox.");
+          navigate({ to: "/auth/verify", search: { email: cleanEmail, purpose: "signup" } });
+          return;
+        }
+        throw error;
+      }
+      if (!data.session) throw new Error("Sign-in failed. Please try again.");
+      toast.success("Signed in");
+      navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign-in failed");
     } finally {
@@ -95,7 +110,7 @@ function LoginForm() {
       <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></Field>
       <Field label="Password"><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></Field>
       <Button type="submit" disabled={loading} className="w-full gradient-primary text-primary-foreground">
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Continue with email code
+        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign in
       </Button>
     </form>
   );
@@ -105,7 +120,6 @@ function RegisterForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", password: "", currency: "USD" as Currency });
   const [loading, setLoading] = useState(false);
-  const signup = useServerFn(startSignup);
 
   useEffect(() => {
     const draft = loadRegistrationDraft();
@@ -119,8 +133,22 @@ function RegisterForm() {
     try {
       const draft = { ...form, email: normalizeEmail(form.email) };
       saveRegistrationDraft(draft);
-      await signup({ data: draft });
-      toast.success("Check your email for a 6-digit verification code.");
+      const { data, error } = await supabase.auth.signUp({
+        email: draft.email,
+        password: draft.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: { full_name: draft.fullName, phone: draft.phone, currency: draft.currency },
+        },
+      });
+      if (error) throw error;
+      if (data.session) {
+        clearRegistrationDraft();
+        toast.success("Welcome to International Digital!");
+        navigate({ to: "/dashboard" });
+        return;
+      }
+      toast.success("Check your email to confirm your account.");
       navigate({ to: "/auth/verify", search: { email: draft.email, purpose: "signup" } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed.");
@@ -154,32 +182,44 @@ function RegisterForm() {
 }
 
 function ForgotForm() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const reset = useServerFn(startReset);
+  const [sent, setSent] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       const cleanEmail = normalizeEmail(email);
-      await reset({ data: { email: cleanEmail } });
-      toast.success("If that email exists, we sent a 6-digit code.");
-      navigate({ to: "/auth/verify", search: { email: cleanEmail, purpose: "reset" } });
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      if (error) throw error;
+      setSent(true);
+      toast.success("If that email exists, we sent a reset link.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send code.");
+      toast.error(err instanceof Error ? err.message : "Could not send reset email.");
     } finally {
       setLoading(false);
     }
   }
 
+  if (sent) {
+    return (
+      <div className="space-y-3 text-sm">
+        <p className="font-medium">Reset link sent</p>
+        <p className="text-muted-foreground">Open the link we emailed to {normalizeEmail(email)} to choose a new password. It expires in 60 minutes.</p>
+        <Button variant="outline" className="w-full" onClick={() => setSent(false)}>Use a different email</Button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="space-y-4">
-      <p className="text-sm text-muted-foreground">Enter your email — we'll send you a secure 6-digit code.</p>
+      <p className="text-sm text-muted-foreground">Enter your email — we'll send you a secure password reset link.</p>
       <Field label="Email"><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
       <Button type="submit" disabled={loading} className="w-full">
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send reset code
+        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send reset link
       </Button>
     </form>
   );
